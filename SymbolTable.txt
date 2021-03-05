@@ -1,0 +1,6 @@
+Symbol  address  length
+A -1 0
+L1 1 0
+B -1 0
+X -1 0
+LOOP -1 0
