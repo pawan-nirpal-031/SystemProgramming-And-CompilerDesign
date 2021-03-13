@@ -313,4 +313,8 @@ public class Assembler {
         String logs = assm.PassOne();
         System.out.println("\n\n"+logs);
     }
+
+    /*
+        Litralprocessing still deals with chars only it must deal with strings, ex : 225 will be chopped off to 2 it's an error
+    */
 }
