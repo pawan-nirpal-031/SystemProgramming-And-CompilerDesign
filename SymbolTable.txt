@@ -1,6 +1,6 @@
 Symbol  address  length
-A -1 0
-L1 1 0
-B -1 0
-X -1 0
-LOOP -1 0
+A 231 3
+L1 201 1
+B 237 2
+X 236 1
+LOOP 210 1

@@ -150,11 +150,14 @@ public class Assembler {
         }
     }
 
-    private void ProcessLiteral(String lit,int numeric_code) throws IOException{
+    private void ProcessLiteral(String lit,int numeric_code,int cond_code,int reg_code) throws IOException{
         String writeline="";
         Literaltable[LiteralPtr].literal = lit;
         LiteralPtr+=1;
-        writeline =  ProgramCounter + "] " + "( IS " + numeric_code + " ) "+ "-1" + " ( L "+ (LiteralPtr-1)  +" )";
+        int code = -1;
+        if(reg_code>-1) code = reg_code;
+        if(cond_code>-1) code = cond_code;
+        writeline =  ProgramCounter + " " + " IS " + numeric_code + " "+ code + " L "+ (LiteralPtr-1);
         System.out.println(writeline);
         file_write.write(writeline+'\n');
     }
@@ -179,14 +182,11 @@ public class Assembler {
             symbol_indx = SymbolPtr-1;
         }
         int code = -1;
-        if(reg_code>-1){
-            code = reg_code;
-        }   
-        else if(cond_code>-1){
-            code = cond_code;
-        }
-        System.out.println(ProgramCounter + "] " + "( IS " + numeric_code + " ) "+ code + " ( S "+(symbol_indx)  +" )");
-        file_write.write( ProgramCounter + "] " + "( IS " + numeric_code + " ) "+ code + " ( S "+(symbol_indx)  +" )\n");  
+        if(reg_code>-1) code = reg_code;
+        else if(cond_code>-1) code = cond_code;
+        Symboltable[symbol_indx].length = 1;
+        System.out.println(ProgramCounter + " " + " IS " + numeric_code + " "+ code + " S "+(symbol_indx)  );
+        file_write.write( ProgramCounter + " " + " IS " + numeric_code + " "+ code + " S "+(symbol_indx) +"\n");  
     }
 
     public String PassOne() {
@@ -196,7 +196,7 @@ public class Assembler {
             while((CurrSourceLine=buffer_read.readLine())!=null){
                 String token[] = CurrSourceLine.split("[ \t]+");
                 if((token.length==3 && token[1].equals("STORE")) || ((token.length==3 || token.length==2) && MachineOpcodeTable.containsKey(token[0])) || ( token.length==4 && MachineOpcodeTable.containsKey(token[1]))){
-                    int numeric_code = MachineOpcodeTable.get(((token.length==4 || token[1].equals("STORE"))?token[1]:token[0]));  // numeric code of this opcode
+                    int numeric_code = MachineOpcodeTable.get(((token.length==4 || (token.length==3 && token[1].equals("STORE")))?token[1]:token[0]));  // numeric code of this opcode
                     int reg_code = -1;
                     int cond_code = -1;
                     if(token.length>=3){
@@ -205,33 +205,38 @@ public class Assembler {
                             if(symbol_indx==-1){
                                 Symboltable[SymbolPtr].symbol_name = token[0];
                                 Symboltable[SymbolPtr].address = ProgramCounter;
+                                if(Symboltable[SymbolPtr].length==0) Symboltable[SymbolPtr].length = 1;
                                 SymbolPtr+=1;    
                                 for(int i =0;i<3;i++) token[i] = token[i+1];
                             }else if(symbol_indx>-1 && Symboltable[symbol_indx].address==-1){ // forward refrenced label
                                 Symboltable[symbol_indx].address = ProgramCounter;
+                                if(Symboltable[symbol_indx].length==0) Symboltable[symbol_indx].length = 1;
                             } else return "Duplicate label";
                         }
                         if(token[1].equals("STORE") && token.length==3){// ex : LOOP STORE X or LOOP STORE =4
                             ProcessSymbol(token[0], reg_code, cond_code, numeric_code);
                             if(token[2].charAt(0)=='='){// LOOP STORE =4
-                                ProcessLiteral(token[2].substring(1), numeric_code);
+                                ProcessLiteral(token[2].substring(1), numeric_code,-1,-1);
                             }else{// LOOP STORE X
                                 ProcessSymbol(token[2], reg_code, cond_code, numeric_code);
                             }
+                            int symbol_indx = SearchSymbolTable(token[0]);
+                            if(symbol_indx==-1) return "Error : trying to access unavilable symbol";
+                            Symboltable[symbol_indx].address = ProgramCounter;
                             continue;
                         }
                         //by now - MOVER AREG B or SUB CREG =5
                         if(RegisterTable.containsKey(token[1])) reg_code = RegisterTable.get(token[1]);
                         if(ConditionCodeTable.containsKey(token[1])) cond_code = ConditionCodeTable.get(token[1]);
                         if(token[2].charAt(0)=='='){// literal not symbol
-                            ProcessLiteral(token[2].substring(1), numeric_code);
+                            ProcessLiteral(token[2].substring(1), numeric_code,cond_code,reg_code);
                         }else{ // symbol
                             ProcessSymbol(token[2], reg_code, cond_code, numeric_code);
                         }
                     }else if(token.length==2){ // READ =5 or PRINT B 
                         numeric_code = MachineOpcodeTable.get(token[0]);
                         if(token[1].charAt(0)=='='){ // means litreal read/print
-                           ProcessLiteral(token[1].substring(1), numeric_code);
+                            ProcessLiteral(token[1].substring(1), numeric_code,-1,-1);
                             // PoolPtr holds the end index of previous pool
                         }else{  
                             ProcessSymbol(token[1], reg_code, cond_code, numeric_code);
@@ -240,22 +245,43 @@ public class Assembler {
                     ProgramCounter+=1;
                 } 
                 else if(token.length==3 && (token[1].equals("DS") || token[1].equals("DC")) ) { // Symbol_name DS/DC size/const 
-                    
+                    int symbol_indx = SearchSymbolTable(token[0]);
+                    if(symbol_indx==-1){ // not added yet add now
+                        Symboltable[SymbolPtr].symbol_name = token[0];
+                        Symboltable[SymbolPtr].address = ProgramCounter;
+                        Symboltable[SymbolPtr].length = (token[1].equals("DS")?Integer.parseInt(token[2]):1);
+                        SymbolPtr+=1;
+                    }else{
+                        Symboltable[symbol_indx].address = ProgramCounter;
+                        Symboltable[symbol_indx].length = (token[1].equals("DS")?Integer.parseInt(token[2]):1);
+                    }
+                    file_write.write(ProgramCounter + " "+" DL "+(token[1].equals("DS")?0:1)+" -1 "+ token[2]+"\n");
+                    System.out.println(ProgramCounter + " "+" DL "+ (token[1].equals("DS")?0:1) +" -1 "+ token[2]);
+                    ProgramCounter+=((token[1].equals("DS"))?Integer.parseInt(token[2]):1);
                 }
                 else if(AssemblerDirectivetable.containsKey(token[0])){
                     int numeric_code = AssemblerDirectivetable.get(token[0]);
                     if(token[0].equals("START")){ // start directive config
-
+                        if(token.length==2) ProgramCounter = Integer.parseInt(token[1]);
+                        else ProgramCounter = 0;
+                        file_write.write("     AD "+numeric_code + " -1 " + " C " + ProgramCounter+"\n");
+                        System.out.println("     AD "+numeric_code + " -1 " + " C " + ProgramCounter);
                     }else if(token[0].equals("LTORG") || token[0].equals("END")){
                         if(Literaltable[Pooltable[PoolPtr]].literal.length()>0){ // 1st LTORG, PoolPtr is last pool's index
                             String writline = "";
                             for(int i = Pooltable[PoolPtr];i<LiteralPtr;i++){
-                                writline = ProgramCounter + "] " + "( AD " + numeric_code + " ) "+ -1 + Literaltable[i].literal;
+                                writline = ProgramCounter + " " + " AD " + numeric_code +" -1 " + Literaltable[i].literal;
                                 Literaltable[i].address = ProgramCounter;
+                                file_write.write(writline+'\n');
+                                System.out.println(writline);
                                 ProgramCounter+=1;
                             }
                             Pooltable[++PoolPtr] = LiteralPtr;
                         }
+                        if(token[0].equals("END")){
+                            file_write.write(ProgramCounter+" " + " AD "+numeric_code+" -1 -1 \n");
+                            System.out.println(ProgramCounter+" " + " AD "+numeric_code+" -1 -1 ");
+                        } 
                     }else if(token[0].equals("ORIGIN")){
                         String labels[] = Trim(token[1], '+');
                         int offset = Integer.parseInt(labels[1]);
@@ -268,9 +294,9 @@ public class Assembler {
                     }
                 }
             }
-           // PopulateDataBases();   
+            PopulateDataBases();   
             file_write.close();
-            return "ok";
+            return "Build Successful";
        } catch (Exception e) {
             return e.getMessage();
        }
@@ -285,6 +311,6 @@ public class Assembler {
         buff_write = new BufferedWriter(file_write);
         Assembler assm = new Assembler();
         String logs = assm.PassOne();
-        System.out.println(logs);
+        System.out.println("\n\n"+logs);
     }
 }
