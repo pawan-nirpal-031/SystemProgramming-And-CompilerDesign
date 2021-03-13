@@ -244,7 +244,7 @@ public class Assembler {
                 }
                 else if(AssemblerDirectivetable.containsKey(token[0])){
                     int numeric_code = AssemblerDirectivetable.get(token[0]);
-                    if(token[0].equals("START")){
+                    if(token[0].equals("START")){ // start directive config
 
                     }else if(token[0].equals("LTORG") || token[0].equals("END")){
                         if(Literaltable[Pooltable[PoolPtr]].literal.length()>0){ // 1st LTORG, PoolPtr is last pool's index
@@ -263,7 +263,7 @@ public class Assembler {
                         if(lblindx==-1) return "Invalid label";
                         int label_addr = Symboltable[lblindx].address;
                         ProgramCounter = label_addr+offset;
-                    }else{ // EQU
+                    }else{ // EQU statement 
                         
                     }
                 }
