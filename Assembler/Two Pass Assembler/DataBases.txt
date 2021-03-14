@@ -1,0 +1,9 @@
+String opcodes[] = {"MOVER","MOVEM","ADD","SUB","MUL","DIV","PRINT","READ","BC"}; - MOT
+
+String directives[] = {"START","END","LTORG"}; - ADT
+
+String condtion[] = {"LT","LE","GT","GE","EQ","ANY"}; - CCT
+
+String registers[] = {"AREG","BREG","CREG","DREG"}; - RT
+
+machine opcode table , assembly directive table , conditon code table , register table
