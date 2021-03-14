@@ -202,19 +202,26 @@ public class TwoPassAssembler {
         while((CurrSourceLine=buf_read.readLine())!=null){
             String token[] = CurrSourceLine.split("[ \t]+");
             if(token[0].length()==0){
-                for(int i =0;i<3;i++){
-                    file_wrte.write(" - ");
-                }
-                file_wrte.write('\n');
+                 file_wrte.write("    -1 -1 -1 ");
             }else{
-               file_wrte.write(token[0]+" ");
-               file_wrte.write(token[2]+" ");
-               if(token.length==6 && token[4].equals("S")){
-                System.out.println("Symbol Address : "+Symboltable[Integer.parseInt(token[5])].address);  
-                file_wrte.write(Symboltable[Integer.parseInt(token[5])].address);
-               } 
-               file_wrte.write('\n');
+               file_wrte.write(token[0]+" "); // PC value 
+               if(token[1].equals("AD")){
+                    file_wrte.write("-1 -1 ");
+                    file_wrte.write(token[4]);
+               }else if(token[1].equals("IS")){
+                    file_wrte.write(token[2]+" "); // Instruction number
+                    file_wrte.write(token[3]+" "); // Register number if present else -1
+                    if(token.length==6 &&( token[4].equals("S") || token[4].equals("L"))){ // Symbol address if symbol
+                    int val = (token[4].equals("S")?Symboltable[Integer.parseInt(token[5])].address:Literaltable[Integer.parseInt(token[5])].address);  
+                    file_wrte.write(String.valueOf(val));
+                    }
+                }else if(token[1].equals("DL")){
+                    file_wrte.write("-1 -1 ");
+                    if(token[2].equals("1")) file_wrte.write(token[4]);
+                    else file_wrte.write("-1 ");
+                }
             }
+            file_wrte.write('\n');
         }
         file_wrte.close();
         file_rd.close();
@@ -278,7 +285,7 @@ public class TwoPassAssembler {
                     ProgramCounter+=1;
                 } 
                 else if(token.length==3 && (token[1].equals("DS") || token[1].equals("DC")) ) { // Symbol_name DS/DC size/const 
-                    int symbol_indx = SearchSymbolTable(token[0]);
+                    int symbol_indx = SearchSymbolTable(token[0]); // DS -> 0 , DC -> 1
                     if(symbol_indx==-1){ // not added yet add now
                         Symboltable[SymbolPtr].symbol_name = token[0];
                         Symboltable[SymbolPtr].address = ProgramCounter;
