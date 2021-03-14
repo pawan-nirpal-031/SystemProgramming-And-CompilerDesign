@@ -54,7 +54,8 @@ class Literal{
 
 
 
-public class Assembler {
+
+public class TwoPassAssembler {
     static BufferedReader buffer_read = null;
     static FileWriter file_write = null;
     static BufferedWriter buff_write = null;
@@ -73,7 +74,7 @@ public class Assembler {
     int PoolPtr; 
 
 
-    Assembler(){
+    TwoPassAssembler(){
         Symboltablesize = 10;
         Pooltable = new int[Symboltablesize];
         ProgramCounter = LiteralPtr = SymbolPtr = 0;
@@ -189,8 +190,36 @@ public class Assembler {
         file_write.write( ProgramCounter + " " + " IS " + numeric_code + " "+ code + " S "+(symbol_indx) +"\n");  
     }
 
-    public void PassTwo(){
-        
+    public String PassTwo() throws Exception{
+        String source_inter_file  = "pass_one_output.txt";
+        String object_file = "object_code.txt";
+        FileReader file_rd = new FileReader(source_inter_file);
+        BufferedReader buf_read = new BufferedReader(file_rd);
+        FileWriter file_wrte = new FileWriter(object_file);
+        BufferedWriter buf_wrte = new BufferedWriter(file_wrte);
+        String CurrSourceLine = "";
+        if(file_rd==null) return "Error : Passone output file not found";
+        while((CurrSourceLine=buf_read.readLine())!=null){
+            String token[] = CurrSourceLine.split("[ \t]+");
+            if(token[0].length()==0){
+                for(int i =0;i<3;i++){
+                    file_wrte.write(" - ");
+                }
+                file_wrte.write('\n');
+            }else{
+               file_wrte.write(token[0]+" ");
+               file_wrte.write(token[2]+" ");
+               if(token.length==6 && token[4].equals("S")){
+                System.out.println("Symbol Address : "+Symboltable[Integer.parseInt(token[5])].address);  
+                file_wrte.write(Symboltable[Integer.parseInt(token[5])].address);
+               } 
+               file_wrte.write('\n');
+            }
+        }
+        file_wrte.close();
+        file_rd.close();
+        buf_read.close();
+        return "Object code succesfully genrated";
     }
 
     public String PassOne() {
@@ -306,16 +335,27 @@ public class Assembler {
        }
     }
 
-    public static void main(String[] args) throws Exception {
-        String Source_File = "input.txt";
-        String Target_file = "output.txt";
-        file_read = new FileReader(Source_File);
-        buffer_read = new BufferedReader(file_read);
-        file_write = new FileWriter(Target_file);
-        buff_write = new BufferedWriter(file_write);
-        Assembler assm = new Assembler();
-        String logs = assm.PassOne();
-        System.out.println("\n\n"+logs);
+    public static void main(String[] args) {
+        try{
+            String Source_File = "pass_one_input.txt";
+            String Target_file = "pass_one_output.txt";
+            file_read = new FileReader(Source_File);
+            buffer_read = new BufferedReader(file_read);
+            file_write = new FileWriter(Target_file);
+            buff_write = new BufferedWriter(file_write);
+            TwoPassAssembler assm = new TwoPassAssembler();
+            String logs = assm.PassOne();
+            buff_write.close();
+            buffer_read.close();
+            file_write.close();
+            file_read.close();
+          //  System.out.println("\n\n"+logs);
+            String logsPass2 =  assm.PassTwo();
+            System.out.println(logsPass2);
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+       
     }
 
     
