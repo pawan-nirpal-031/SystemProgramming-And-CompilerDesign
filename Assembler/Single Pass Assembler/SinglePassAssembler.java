@@ -189,6 +189,11 @@ public class SinglePassAssembler{
         file_write.write( ProgramCounter + " " + " IS " + numeric_code + " "+ code + " S "+(symbol_indx) +"\n");  
     }
 
+    public String SinglePass() throws Exception{
+        
+
+        return "Build complete";
+    }
 
     public static void main(String[] args) {
         try {
@@ -199,6 +204,8 @@ public class SinglePassAssembler{
             file_write = new FileWriter(Target_file);
             buff_write = new BufferedWriter(file_write);
             SinglePassAssembler assm = new SinglePassAssembler();
+            String logs = assm.SinglePass();
+            System.out.println("\n"+ logs);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
