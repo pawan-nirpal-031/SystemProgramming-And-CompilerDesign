@@ -57,7 +57,7 @@ class GitEngine{
 
     public:
 
-        void ForcePush(){
+        void ForcePushToMaster(){
             system("git push origin master --force");
         }
 
@@ -92,12 +92,12 @@ class GitEngine{
         }
 
         void SyncAllToMainBranch(){
-            string commit_msg = "git commit -m ";
             cout<<"> Enter commit message "<<endl;
             string msg;
             cin>>msg;
-            commit_msg+=msg;
+            string commit_msg = "git commit -m \"" + msg + "\"";
             system("git add .");
+            cout<<commit_msg<<" ";
             system(&commit_msg[0]);
             system("git push");
         }
