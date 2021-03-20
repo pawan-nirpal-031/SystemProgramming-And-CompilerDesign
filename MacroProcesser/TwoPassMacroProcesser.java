@@ -54,9 +54,13 @@ public class TwoPassMacroProcesser {
                 if(token[0].equals("MEND")) macro_dfn = false;
             }
         }
-        return "Pass one ok";
+        return "Pass one successful";
     }
 
+    public String PassTwoMacroProcesser() throws Exception{
+
+        return "Pass two successful";
+    }
 
     TwoPassMacroProcesser(){
        MacroDefinationTable = new String[databasesize];
@@ -81,7 +85,7 @@ public class TwoPassMacroProcesser {
             buff_write = new BufferedWriter(file_write);
             TwoPassMacroProcesser system = new TwoPassMacroProcesser();
             String logs = system.PassOneMacroProcesser();
-            if(!logs.equals("Pass one ok")){
+            if(!logs.equals("Pass one successful")){
                 System.out.println(logs);
             }
             buff_write.close();
